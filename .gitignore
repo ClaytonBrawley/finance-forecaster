@@ -1,0 +1,52 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.angular/
+src/web/dist/
+src/api/dist/
+
+# Environment files — never commit real secrets/config
+.env
+.env.local
+.env.*.local
+
+# Database — local dev data must never be committed
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+src/api/prisma/*.db
+src/api/prisma/migrations/dev.db
+
+# Generated Prisma client
+src/api/src/generated/
+
+# Logs
+*.log
+npm-debug.log*
+logs/
+
+# Backups / exports / local dumps — may contain real personal data
+*.bak
+*.backup
+*.dump
+backups/
+exports/
+
+# NOTE: screenshots/exports containing real personal financial data must never be committed.
+# Not blanket-ignored by file type here (that would also hide legitimate public images like a
+# logo or README screenshot) — review image contents by hand before every commit instead.
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+
+# Test/coverage output
+coverage/
+
+# Local Claude Code settings (project-only, not shared)
+.claude/settings.local.json

@@ -1,0 +1,12 @@
+{
+  "name": "finance-forecaster",
+  "private": true,
+  "workspaces": [
+    "src/web",
+    "src/api"
+  ],
+  "scripts": {
+    "web": "npm run start --workspace=src/web",
+    "api": "npm run dev --workspace=src/api"
+  }
+}
