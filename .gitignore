@@ -12,14 +12,6 @@ src/api/dist/
 .env.local
 .env.*.local
 
-# Database — local dev data must never be committed
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
-src/api/prisma/*.db
-src/api/prisma/migrations/dev.db
-
 # Generated Prisma client
 src/api/src/generated/
 
