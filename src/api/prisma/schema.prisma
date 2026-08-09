@@ -1,13 +1,65 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "sqlserver"
+}
+
+// A money bucket assigned to a purpose (e.g. Bills, Savings). Balances here
+// are the current reconciled starting point the forecast projects forward from.
+model Vault {
+  id                String       @id @default(cuid())
+  name              String
+  currentBalance    Float        @default(0)
+  minGoal           Float?
+  maxGoal           Float?
+  priority          Int          @default(0)
+  minTransfer       Float        @default(0)
+  emergencyEligible Boolean      @default(false)
+  archived          Boolean      @default(false)
+  sortOrder         Int          @default(0)
+  expenseRules      ExpenseRule[]
+}
+
+// Low/Default/High expected earnings for a given weekday (0 = Sunday .. 6 = Saturday).
+model EarningsPlan {
+  id      String @id @default(cuid())
+  weekday Int    @unique
+  low     Float
+  default Float
+  high    Float
+}
+
+// The selected earnings expectation for one specific future (or past) date.
+// Preserved historically even if the underlying EarningsPlan default later changes.
+model DailyPlan {
+  id            String   @id @default(cuid())
+  date          DateTime @unique
+  mode          String   @default("DEFAULT") // LOW | DEFAULT | HIGH | CUSTOM
+  customAmount  Float?
+}
+
+// A recurring expected expense ("I expect this to happen"), separate from any actual transaction.
+model ExpenseRule {
+  id             String   @id @default(cuid())
+  name           String
+  amount         Float
+  recurrenceType String // MONTHLY_DATE | WEEKLY
+  dayOfMonth     Int? // used when recurrenceType = MONTHLY_DATE
+  weekday        Int? // used when recurrenceType = WEEKLY (0 = Sunday .. 6 = Saturday)
+  vaultId        String? // null = paid from Remaining Cash
+  vault          Vault?   @relation(fields: [vaultId], references: [id])
+  active         Boolean  @default(true)
+}
+
+// Singleton row for app-wide configuration.
+model Setting {
+  id                     String @id @default("singleton")
+  remainingCash          Float  @default(0)
+  preferredRemainingCash Float  @default(0)
 }

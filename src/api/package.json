@@ -4,9 +4,9 @@
   "description": "finance-forecaster API",
   "main": "dist/index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch --env-file=.env src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
+    "start": "node --env-file=.env dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -14,10 +14,13 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@prisma/adapter-mssql": "^7.9.1",
     "@prisma/client": "^7.9.1",
+    "cors": "^2.8.6",
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.2.0",
     "prisma": "^7.9.1",

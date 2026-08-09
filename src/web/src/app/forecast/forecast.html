@@ -1,0 +1,43 @@
+<div class="forecast-page">
+  <header class="forecast-header">
+    <h1>Forecast</h1>
+    <p>Rolling 30-day projection from your current vault balances and expected earnings/expenses.</p>
+  </header>
+
+  @if (loading()) {
+    <p class="status">Loading forecast…</p>
+  } @else if (error()) {
+    <p class="status status-error">{{ error() }}</p>
+  } @else if (forecast(); as f) {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="col-date">Date</th>
+            <th class="col-num">Exp In</th>
+            <th class="col-num">Out</th>
+            <th class="col-num col-total">Total</th>
+            @for (name of f.vaultNames; track name) {
+              <th class="col-num">{{ name }}</th>
+            }
+            <th class="col-num">Remaining</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (day of f.days; track day.date) {
+            <tr>
+              <td class="col-date">{{ formatDate(day.date) }}</td>
+              <td class="col-num positive">{{ formatCurrency(day.expectedIn) }}</td>
+              <td class="col-num" [class.negative]="day.expectedOut > 0">{{ formatCurrency(day.expectedOut) }}</td>
+              <td class="col-num col-total" [class.negative]="day.total < 0">{{ formatCurrency(day.total) }}</td>
+              @for (name of f.vaultNames; track name) {
+                <td class="col-num" [class.negative]="vaultBalance(day, name) < 0">{{ formatCurrency(vaultBalance(day, name)) }}</td>
+              }
+              <td class="col-num" [class.negative]="day.remaining < 0">{{ formatCurrency(day.remaining) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
