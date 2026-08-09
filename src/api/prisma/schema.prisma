@@ -24,6 +24,7 @@ model Vault {
   archived          Boolean      @default(false)
   sortOrder         Int          @default(0)
   expenseRules      ExpenseRule[]
+  allocations       ForecastAllocation[]
 }
 
 // Low/Default/High expected earnings for a given weekday (0 = Sunday .. 6 = Saturday).
@@ -55,6 +56,18 @@ model ExpenseRule {
   vaultId        String? // null = paid from Remaining Cash
   vault          Vault?   @relation(fields: [vaultId], references: [id])
   active         Boolean  @default(true)
+}
+
+// A manual decision to move projected Remaining Cash into a vault on a future date.
+// Safely removable/replaceable — reforecasting from a date should be able to clear these.
+model ForecastAllocation {
+  id      String   @id @default(cuid())
+  date    DateTime
+  vaultId String
+  vault   Vault    @relation(fields: [vaultId], references: [id])
+  amount  Float
+
+  @@unique([date, vaultId])
 }
 
 // Singleton row for app-wide configuration.

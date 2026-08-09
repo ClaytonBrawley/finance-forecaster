@@ -95,3 +95,72 @@ tbody tr:hover {
 .negative {
   color: var(--destructive);
 }
+
+.vault-cell {
+  position: relative;
+  border-radius: 0.25rem;
+}
+
+.vault-cell.editing {
+  overflow: visible;
+}
+
+.cell-value {
+  cursor: text;
+  display: inline-block;
+  border-radius: 0.2rem;
+  padding: 0.1rem 0.3rem;
+  margin: -0.1rem -0.3rem;
+}
+
+.cell-value:hover {
+  background: var(--accent);
+}
+
+.cell-value.allocated {
+  font-weight: 700;
+}
+
+.inline-edit-input {
+  width: 5.5rem;
+  box-sizing: border-box;
+  padding: 0.1rem 0.3rem;
+  border: 1px solid var(--ring);
+  border-radius: 0.2rem;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.inline-edit-input:focus {
+  outline: none;
+}
+
+.inline-edit-input.invalid {
+  border-color: var(--destructive);
+}
+
+.inline-hint {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 0.25rem;
+  z-index: 30;
+  white-space: nowrap;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 0.2rem);
+  box-shadow: 0 4px 12px oklch(0 0 0 / 0.12);
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.inline-hint.invalid {
+  color: var(--destructive);
+  border-color: var(--destructive);
+}

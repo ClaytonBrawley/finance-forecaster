@@ -1,7 +1,7 @@
 <div class="forecast-page">
   <header class="forecast-header">
     <h1>Forecast</h1>
-    <p>Rolling 30-day projection from your current vault balances and expected earnings/expenses.</p>
+    <p>Rolling 30-day projection. Click a vault balance to edit it — the difference moves to/from Remaining Cash.</p>
   </header>
 
   @if (loading()) {
@@ -17,8 +17,8 @@
             <th class="col-num">Exp In</th>
             <th class="col-num">Out</th>
             <th class="col-num col-total">Total</th>
-            @for (name of f.vaultNames; track name) {
-              <th class="col-num">{{ name }}</th>
+            @for (vault of f.vaults; track vault.id) {
+              <th class="col-num">{{ vault.name }}</th>
             }
             <th class="col-num">Remaining</th>
           </tr>
@@ -30,8 +30,41 @@
               <td class="col-num positive">{{ formatCurrency(day.expectedIn) }}</td>
               <td class="col-num" [class.negative]="day.expectedOut > 0">{{ formatCurrency(day.expectedOut) }}</td>
               <td class="col-num col-total" [class.negative]="day.total < 0">{{ formatCurrency(day.total) }}</td>
-              @for (name of f.vaultNames; track name) {
-                <td class="col-num" [class.negative]="vaultBalance(day, name) < 0">{{ formatCurrency(vaultBalance(day, name)) }}</td>
+              @for (vault of f.vaults; track vault.id) {
+                <td
+                  class="col-num vault-cell"
+                  [class.negative]="vaultBalance(day, vault.name) < 0"
+                  [class.editing]="isEditing(day, vault)"
+                >
+                  @if (isEditing(day, vault)) {
+                    <input
+                      type="text"
+                      inputmode="decimal"
+                      autocomplete="off"
+                      class="inline-edit-input"
+                      [class.invalid]="isEditInvalid(day)"
+                      autofocus
+                      [(ngModel)]="editValue"
+                      (focus)="$any($event.target).select()"
+                      (blur)="commitEdit()"
+                      (keydown.enter)="$any($event.target).blur(); $event.preventDefault()"
+                      (keydown.escape)="cancelEdit(); $any($event.target).blur()"
+                    />
+                    <span class="inline-hint" [class.invalid]="isEditInvalid(day)">
+                      @if (editInvalidReason(day); as reason) {
+                        {{ reason }}
+                      } @else {
+                        {{ formatCurrency(remainingAfterEdit(day)) }} left
+                      }
+                    </span>
+                  } @else {
+                    <span
+                      class="cell-value"
+                      [class.allocated]="allocationAmount(day, vault.name) !== 0"
+                      (click)="startEdit(day, vault)"
+                    >{{ formatCurrency(vaultBalance(day, vault.name)) }}</span>
+                  }
+                </td>
               }
               <td class="col-num" [class.negative]="day.remaining < 0">{{ formatCurrency(day.remaining) }}</td>
             </tr>

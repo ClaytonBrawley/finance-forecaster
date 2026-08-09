@@ -8,11 +8,17 @@ export interface ForecastDay {
   expectedOut: number;
   total: number;
   vaults: Record<string, number>;
+  allocations: Record<string, number>;
   remaining: number;
 }
 
+export interface ForecastVault {
+  id: string;
+  name: string;
+}
+
 export interface ForecastResult {
-  vaultNames: string[];
+  vaults: ForecastVault[];
   days: ForecastDay[];
 }
 
@@ -24,5 +30,9 @@ export class ForecastService {
 
   getForecast(days = 30): Observable<ForecastResult> {
     return this.http.get<ForecastResult>(`${API_BASE}/forecast`, { params: { days } });
+  }
+
+  allocate(date: string, vaultId: string, amount: number): Observable<unknown> {
+    return this.http.put(`${API_BASE}/allocations`, { date, vaultId, amount });
   }
 }

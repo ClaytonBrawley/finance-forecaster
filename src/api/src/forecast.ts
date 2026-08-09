@@ -6,35 +6,63 @@ export interface ForecastDay {
   expectedOut: number;
   total: number;
   vaults: Record<string, number>;
+  allocations: Record<string, number>;
   remaining: number;
 }
 
+export interface ForecastVault {
+  id: string;
+  name: string;
+}
+
 export interface ForecastResult {
-  vaultNames: string[];
+  vaults: ForecastVault[];
   days: ForecastDay[];
 }
 
-function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
+// Dates are treated as local calendar days end to end (matches how `today` and each
+// forecast day below are constructed), never converted through UTC — otherwise a
+// timezone ahead of UTC would shift stored dates to the previous day on read-back.
+export function toDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function parseDateKey(dateKey: string): Date {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  return new Date(y, m - 1, d);
 }
 
 export async function computeForecast(prisma: PrismaClient, days: number): Promise<ForecastResult> {
-  const [vaults, earningsPlans, dailyPlans, expenseRules, setting] = await Promise.all([
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rangeEnd = new Date(today);
+  rangeEnd.setDate(rangeEnd.getDate() + days);
+
+  const [vaults, earningsPlans, dailyPlans, expenseRules, allocations, setting] = await Promise.all([
     prisma.vault.findMany({ where: { archived: false }, orderBy: { sortOrder: "asc" } }),
     prisma.earningsPlan.findMany(),
     prisma.dailyPlan.findMany(),
     prisma.expenseRule.findMany({ where: { active: true } }),
+    prisma.forecastAllocation.findMany({ where: { date: { gte: today, lt: rangeEnd } } }),
     prisma.setting.findUnique({ where: { id: "singleton" } }),
   ]);
 
   const earningsByWeekday = new Map(earningsPlans.map((plan) => [plan.weekday, plan]));
   const dailyPlanByDate = new Map(dailyPlans.map((plan) => [toDateKey(plan.date), plan]));
+  const allocationsByDate = new Map<string, typeof allocations>();
+  for (const allocation of allocations) {
+    const key = toDateKey(allocation.date);
+    const list = allocationsByDate.get(key) ?? [];
+    list.push(allocation);
+    allocationsByDate.set(key, list);
+  }
 
   let remainingCash = setting?.remainingCash ?? 0;
   const vaultBalances = new Map(vaults.map((vault) => [vault.id, vault.currentBalance]));
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const vaultById = new Map(vaults.map((vault) => [vault.id, vault]));
 
   const rows: ForecastDay[] = [];
 
@@ -69,14 +97,31 @@ export async function computeForecast(prisma: PrismaClient, days: number): Promi
       }
     }
 
+    const allocationsRow: Record<string, number> = {};
+    for (const allocation of allocationsByDate.get(dateKey) ?? []) {
+      const vault = vaultById.get(allocation.vaultId);
+      if (!vault) continue;
+      vaultBalances.set(allocation.vaultId, vaultBalances.get(allocation.vaultId)! + allocation.amount);
+      remainingCash -= allocation.amount;
+      allocationsRow[vault.name] = allocation.amount;
+    }
+
     const vaultsRow: Record<string, number> = {};
     for (const vault of vaults) {
       vaultsRow[vault.name] = vaultBalances.get(vault.id) ?? 0;
     }
     const total = remainingCash + [...vaultBalances.values()].reduce((sum, balance) => sum + balance, 0);
 
-    rows.push({ date: dateKey, expectedIn, expectedOut, total, vaults: vaultsRow, remaining: remainingCash });
+    rows.push({
+      date: dateKey,
+      expectedIn,
+      expectedOut,
+      total,
+      vaults: vaultsRow,
+      allocations: allocationsRow,
+      remaining: remainingCash,
+    });
   }
 
-  return { vaultNames: vaults.map((v) => v.name), days: rows };
+  return { vaults: vaults.map((v) => ({ id: v.id, name: v.name })), days: rows };
 }
